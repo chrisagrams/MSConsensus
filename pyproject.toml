@@ -1,0 +1,12 @@
+[project]
+name = "msconsensus"
+version = "0.1.0"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "msdatasets[hf,torch]",
+    "torch",
+    "numpy",
+    "matplotlib",
+    "ipykernel",
+    "jupyter",
+]
