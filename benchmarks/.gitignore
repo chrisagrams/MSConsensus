@@ -1,0 +1,15 @@
+# Datasets, checkpoints, and run outputs (see README)
+data/
+runs/
+*/data/
+*/logs/
+*/models/
+*/checkpoints/
+spec2vec/reports/
+wandb/
+.venv/
+.venv-*/
+__pycache__/
+*.pyc
+*.egg-info/
+*.npz

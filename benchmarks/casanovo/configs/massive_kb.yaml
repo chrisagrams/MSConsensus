@@ -1,0 +1,24 @@
+###
+# Per-dataset overlay for the MassIVE-KB run.
+# Deep-merged over casanovo_paper.yaml by casanovo_repro.train.
+###
+random_seed: 454
+# Lance was rewritten post-build by casanovo/scripts/normalize_lance_to_v5.py
+# (M+15.995 -> M[Oxidation], -17.027QKAE... -> [Ammonia-loss]-QKAE..., etc.) so
+# the seq strings now match the casanovo 5.x default residue alphabet pinned
+# in casanovo_paper.yaml. The standard proforma tokenizer (massivekb_tokenizer
+# = false from paper.yaml) covers them — no override needed here.
+lance_dir: data/massive_kb_v1_shared/casanovo_lance_v5
+
+_repro:
+  dataset: massive_kb
+  # Polaris job runs hit walltime; pick up from <output_dir>/last.ckpt
+  # automatically on relaunch.
+  autoresume: true
+  train_mgf: data/massive_kb_v1_shared/massivekb_82c0124b_train.mgf
+  val_mgf:   data/massive_kb_v1_shared/massivekb_82c0124b_val.mgf
+  test_mgf:  data/massive_kb_v1_shared/massivekb_82c0124b_test.mgf
+  output_dir: runs/casanovo_massive_kb
+  wandb:
+    project: msbench-casanovo
+    run_name: massive_kb-paper-from-scratch

@@ -1,0 +1,50 @@
+###
+# Local smoke-test overlay for the consensus 30M run.
+#
+# Goal: a 5-10 minute single-GPU run that exercises the same model
+# (~47M params, identical architecture) and the same data path as the
+# Polaris job, against a stratified peptide-level subset of the
+# rewritten v5 lance. If anything is wrong with the tokenizer wiring,
+# data loader, optimizer, or loss path, this catches it before we burn
+# Polaris hours.
+#
+# Build the smoke subset once with:
+#   .venv/bin/python analysis/build_smoke_subset.py
+#
+# Then:
+#   casanovo-repro train --config configs/smoke_consensus.yaml
+###
+
+random_seed: 7
+lance_dir: casanovo/data/lance_v5_smoke/concensus_spec_30M
+
+# --- Hardware: 1 local RTX 6000 Ada. Architecture knobs (n_layers, dim_model,
+#     n_head, dim_feedforward, dropout) inherit from casanovo_paper.yaml so
+#     we smoke-test the exact ~47M-param model that will train on Polaris. ---
+devices: 1
+accelerator: "gpu"
+precision: "bf16-mixed"
+# precision: "32-true"
+
+# Casanovo's data module does train_batch_size //= n_devices. With devices=1,
+# config 32 yields per-GPU = global = 32 — same per-GPU shape as the Polaris
+# 4-GPU config (128 global / 4 GPUs = 32 per GPU).
+train_batch_size: 32
+predict_batch_size: 256
+
+# --- Schedule: scaled to the ~250k-row stratified subset (~7.8k steps/epoch
+#     at batch=32, single-epoch run -> ~7800 total steps). Cosine spans
+#     post-warmup so LR decays through the rest of the epoch. ---
+warmup_iters: 500
+cosine_schedule_period_iters: 7_000
+max_epochs: 1
+val_check_interval: 500
+log_every_n_steps: 50
+shuffle_buffer_size: 5_000
+
+_repro:
+  dataset: consensus
+  output_dir: casanovo/logs/smoke_consensus
+  wandb:
+    project: msbench-casanovo-smoke
+    run_name: smoke-consensus-local

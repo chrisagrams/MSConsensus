@@ -1,0 +1,39 @@
+###
+# Local smoke-test overlay for the MassIVE-KB run, 2x the size of
+# smoke_massive_kb.yaml.
+#
+# K=100k peptides x M=5 cap. The heavy tail of single-spectrum peptides
+# means the actual row count is ~320k (vs the K*M ceiling of 500k), so
+# ~10k steps/epoch at batch=32.
+###
+
+random_seed: 7
+lance_dir: casanovo/data/lance_v5_smoke/massive_kb_v1_shared_2x
+
+devices: 1
+accelerator: "gpu"
+precision: "bf16-mixed"
+# precision: "32-true"
+
+train_batch_size: 32
+predict_batch_size: 256
+
+# --- Schedule: scaled to ~320k rows (~10k steps/epoch at batch=32). ---
+warmup_iters: 500
+cosine_schedule_period_iters: 9_500
+max_epochs: 1
+# See smoke_consensus_2x.yaml for max_steps rationale. Set generously
+# above the expected ~10k step count -- the actual subset row count won't
+# be known until the build finishes; max_steps will still terminate at the
+# bound if the dataloader runs longer than expected.
+# max_steps: 10_000
+val_check_interval: 1_000
+log_every_n_steps: 100
+shuffle_buffer_size: 5_000
+
+_repro:
+  dataset: massive_kb
+  output_dir: casanovo/logs/smoke_massive_kb_2x
+  wandb:
+    project: msbench-casanovo-smoke
+    run_name: smoke-massive_kb-2x-local

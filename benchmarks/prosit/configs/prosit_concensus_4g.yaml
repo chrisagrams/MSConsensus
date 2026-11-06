@@ -1,0 +1,83 @@
+# 4 M-subset consensus-spectra training run (the "4G dataset" — ~3.1G train +
+# 403M test xz-compressed; ~12G + 1.4G decompressed). Same paper-faithful
+# hyperparameters as prosit_paper.yaml; only data paths differ.
+#
+# This corpus uses mass-delta bracket notation in SEQ= (C[57.0215],
+# M[15.9949]) — the annotator translates these to kusterlab tokens before
+# parsing. CE is constant 35 (user spec), 25 ppm fragment matching (FTMS).
+# Val carved from train via split_train_val.py (5%, seed 20260426).
+
+run_name: prosit_concensus_4g
+
+data:
+  train_parquet: prosit/data/processed/concensus_4g/train.parquet
+  val_parquet:   prosit/data/processed/concensus_4g/val.parquet
+  test_parquet:  prosit/data/processed/concensus_4g/test.parquet
+  val_ratio: null
+  sequence_column: modified_sequence
+  label_column: intensities_raw
+  model_features:
+    - collision_energy_aligned_normed
+    - precursor_charge_onehot
+
+model:
+  seq_length: 30
+  with_termini: false
+  use_meta_data: true
+  use_prosit_ptm_features: false
+  embedding_output_dim: 16
+  recurrent_layers_sizes: [256, 512]
+  regressor_layer_size: 512
+  dropout_rate: 0.2
+  latent_dropout_rate: 0.1
+
+optim:
+  optimizer: adam
+  learning_rate: 1.0e-4
+  grad_clip_norm: 1.0
+  scheduler:
+    name: reduce_on_plateau
+    factor: 0.5
+    patience: 5
+    min_lr: 1.0e-7
+
+training:
+  batch_size: 1024
+  num_epochs: 200
+  early_stop_patience: 15
+  seed: 42
+
+hardware:
+  device: auto
+  num_workers: 16
+  prefetch_factor: 4
+  pin_memory: true
+
+logging:
+  wandb_project: msbench-prosit
+  wandb_entity: CS_Pharm
+  wandb_mode: online
+  log_every_n_steps: 50
+  checkpoint_dir: prosit/models/concensus_4g
+  log_dir: prosit/logs/concensus_4g
+
+convergence:
+  enabled: true
+  eval_every_n_epochs: 1
+  per_charge: true
+  charges: [1, 2, 3, 4, 5, 6]
+
+preprocess:
+  raw_train_xz: prosit/data/raw/concensus_4g/concensus_4m.mgf_train.mgf
+  raw_test_xz:  prosit/data/raw/concensus_4g/concensus_4m.mgf_test.mgf
+  val_fraction: 0.05
+  val_seed: 20260426
+  collision_energy: 35.0
+  mass_analyzer: FTMS
+  ppm_override: null
+  min_peaks: 5
+  max_seq_len: 30
+  charges: [1, 2, 3, 4, 5, 6]
+  shard_rows: 250000
+  dedup_mode: "none"
+  top_k: 1

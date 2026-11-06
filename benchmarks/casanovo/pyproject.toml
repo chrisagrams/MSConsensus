@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "casanovo_repro"
+version = "0.1.0"
+description = "Faithful retrain of Casanovo (Yilmaz et al. 2024, Nat Commun) on MassIVE-KB and a 30M consensus-spectra corpus, with paper-matched hyperparameters and W&B logging."
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "casanovo==5.1.*",
+    "depthcharge-ms>=0.4",
+    "torch>=2.1,<2.5",
+    "lightning>=2.2,<2.5",
+    "click>=8.0",
+    "pyyaml>=6.0",
+    "pyteomics>=4.6",
+    "wandb>=0.16",
+    "tqdm>=4.66",
+]
+
+[project.scripts]
+casanovo-repro = "casanovo_repro.__main__:cli"
+
+[tool.setuptools.packages.find]
+where = ["src"]

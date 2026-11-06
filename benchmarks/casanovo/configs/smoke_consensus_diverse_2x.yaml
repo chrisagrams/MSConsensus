@@ -1,0 +1,35 @@
+###
+# Local smoke-test overlay for the consensus 30M run, peptide-diverse
+# variant (mirrors massive_kb's stratification regime), 2x the size of
+# smoke_consensus_diverse.yaml.
+#
+# K=100k peptides x M=3 cap -> ~300k rows train, ~16k rows valid.
+###
+
+random_seed: 7
+lance_dir: casanovo/data/lance_v5_smoke/concensus_spec_30M_diverse_2x
+
+devices: 1
+accelerator: "gpu"
+precision: "bf16-mixed"
+# precision: "32-true"
+
+train_batch_size: 32
+predict_batch_size: 256
+
+# --- Schedule: scaled to ~300k rows (ceil(300000/32) = 9,375 train steps). ---
+warmup_iters: 500
+cosine_schedule_period_iters: 9_000
+max_epochs: 1
+# See smoke_consensus_2x.yaml for max_steps rationale.
+# max_steps: 9_375
+val_check_interval: 1_000
+log_every_n_steps: 100
+shuffle_buffer_size: 5_000
+
+_repro:
+  dataset: consensus
+  output_dir: casanovo/logs/smoke_consensus_diverse_2x
+  wandb:
+    project: msbench-casanovo-smoke
+    run_name: smoke-consensus-diverse-2x-local

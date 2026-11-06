@@ -1,0 +1,90 @@
+# 30 M consensus-spectra training run. Same paper-faithful hyperparameters as
+# prosit_paper.yaml; only data paths differ. The corpus ships only train+test,
+# so val is carved from train via scripts/split_train_val.py (5%, seed 20260426).
+# Annotation: assume fixed carbamidomethyl on C (MaxQuant default Prosit was
+# trained on); 20 ppm fragment matching; top-1 by SCORE per (SEQ, charge).
+# CE is constant 35 (user spec).
+
+run_name: prosit_concensus_30m
+
+data:
+  train_parquet: prosit/data/processed/concensus_30m/train.parquet
+  val_parquet:   prosit/data/processed/concensus_30m/val.parquet
+  test_parquet:  prosit/data/processed/concensus_30m/test.parquet
+  val_ratio: null
+  sequence_column: modified_sequence
+  label_column: intensities_raw
+  model_features:
+    - collision_energy_aligned_normed
+    - precursor_charge_onehot
+
+model:
+  seq_length: 30
+  with_termini: false
+  use_meta_data: true
+  use_prosit_ptm_features: false
+  embedding_output_dim: 16
+  recurrent_layers_sizes: [256, 512]
+  regressor_layer_size: 512
+  dropout_rate: 0.2
+  latent_dropout_rate: 0.1
+
+optim:
+  optimizer: adam
+  learning_rate: 1.0e-4
+  grad_clip_norm: 1.0
+  scheduler:
+    name: reduce_on_plateau
+    factor: 0.5
+    patience: 5
+    min_lr: 1.0e-7
+
+training:
+  # Consensus dataset has ~225 batches/epoch (vs ~6k for paper run with the
+  # same batch size), so equivalent gradient steps need ~5-10x more epochs.
+  # Cap at 200 with early-stop on val_loss; 15-epoch patience to avoid noise.
+  batch_size: 1024
+  num_epochs: 200
+  early_stop_patience: 15
+  seed: 42
+
+hardware:
+  device: auto
+  num_workers: 16          # DataLoader workers; bump if GPU util < 90%
+  prefetch_factor: 4       # batches each worker buffers ahead
+  pin_memory: true
+
+logging:
+  wandb_project: msbench-prosit
+  wandb_entity: CS_Pharm
+  wandb_mode: online
+  log_every_n_steps: 50
+  checkpoint_dir: prosit/models/concensus_30m
+  log_dir: prosit/logs/concensus_30m
+
+convergence:
+  enabled: true
+  eval_every_n_epochs: 1
+  per_charge: true
+  charges: [1, 2, 3, 4, 5, 6]
+
+preprocess:
+  raw_train_xz: prosit/data/raw/concensus_30m/concensus.mgf_train.xz
+  raw_test_xz:  prosit/data/raw/concensus_30m/concensus.mgf_test.xz
+  val_fraction: 0.05
+  val_seed: 20260426
+  collision_energy: 35.0
+  # Tolerance preset comes from upstream constants.TOLERANCE: FTMS=25 ppm
+  # (Prosit paper Orbitrap default). Set ppm_override only to force a custom
+  # value -- otherwise the upstream preset wins.
+  mass_analyzer: FTMS
+  ppm_override: null
+  min_peaks: 5
+  max_seq_len: 30
+  charges: [1, 2, 3, 4, 5, 6]
+  shard_rows: 250000           # parquet shard size
+  # Keep every annotated PSM — mirrors the Prosit paper's training schema
+  # (~16x PSMs per peptide). Was 'top_k' k=1 in run1, which threw away ~99%
+  # of within-peptide redundancy.
+  dedup_mode: "none"
+  top_k: 1                     # ignored unless dedup_mode == 'top_k'

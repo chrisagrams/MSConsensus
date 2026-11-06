@@ -1,0 +1,51 @@
+###
+# Per-dataset overlay for the new_match_15M run, FILE-LEVEL split.
+# Deep-merged over casanovo_paper.yaml by casanovo_repro.train.
+#
+# Source: 25 MGFs at data/concensus_spec_30M/new_match_15M/, patched
+# with theoretical PEPMASS by casanovo/scripts/patch_match15m_mgf.py.
+#   test  = consensus_00.mgf  (~582K spectra)
+#   valid = consensus_01.mgf  (~582K spectra)
+#   train = consensus_02..24  (23 files, ~13.4M spectra)
+# This split is NOT peptide-disjoint — same SEQ likely appears across files.
+# The consensus_15m_pepdisjoint.yaml overlay covers that variant.
+###
+random_seed: 456
+# lance_dir is the v5-normalized output of normalize_lance_to_v5.py
+# (C[57.0215] -> C[Carbamidomethyl], M[15.9949] -> M[Oxidation]),
+# rsync'd to Eagle. Preprocessing was done locally; train on Polaris.
+lance_dir: data/new_match_15M/lance_v5_file
+
+_repro:
+  dataset: consensus_15m_file
+  autoresume: true
+  train_mgf:
+    - casanovo/data/new_match_15M/mgf_patched/consensus_02.mgf
+    - casanovo/data/new_match_15M/mgf_patched/consensus_03.mgf
+    - casanovo/data/new_match_15M/mgf_patched/consensus_04.mgf
+    - casanovo/data/new_match_15M/mgf_patched/consensus_05.mgf
+    - casanovo/data/new_match_15M/mgf_patched/consensus_06.mgf
+    - casanovo/data/new_match_15M/mgf_patched/consensus_07.mgf
+    - casanovo/data/new_match_15M/mgf_patched/consensus_08.mgf
+    - casanovo/data/new_match_15M/mgf_patched/consensus_09.mgf
+    - casanovo/data/new_match_15M/mgf_patched/consensus_10.mgf
+    - casanovo/data/new_match_15M/mgf_patched/consensus_11.mgf
+    - casanovo/data/new_match_15M/mgf_patched/consensus_12.mgf
+    - casanovo/data/new_match_15M/mgf_patched/consensus_13.mgf
+    - casanovo/data/new_match_15M/mgf_patched/consensus_14.mgf
+    - casanovo/data/new_match_15M/mgf_patched/consensus_15.mgf
+    - casanovo/data/new_match_15M/mgf_patched/consensus_16.mgf
+    - casanovo/data/new_match_15M/mgf_patched/consensus_17.mgf
+    - casanovo/data/new_match_15M/mgf_patched/consensus_18.mgf
+    - casanovo/data/new_match_15M/mgf_patched/consensus_19.mgf
+    - casanovo/data/new_match_15M/mgf_patched/consensus_20.mgf
+    - casanovo/data/new_match_15M/mgf_patched/consensus_21.mgf
+    - casanovo/data/new_match_15M/mgf_patched/consensus_22.mgf
+    - casanovo/data/new_match_15M/mgf_patched/consensus_23.mgf
+    - casanovo/data/new_match_15M/mgf_patched/consensus_24.mgf
+  val_mgf:  casanovo/data/new_match_15M/mgf_patched/consensus_01.mgf
+  test_mgf: casanovo/data/new_match_15M/mgf_patched/consensus_00.mgf
+  output_dir: casanovo/logs/consensus_15m_file
+  wandb:
+    project: msbench-casanovo
+    run_name: consensus15m-file-from-scratch

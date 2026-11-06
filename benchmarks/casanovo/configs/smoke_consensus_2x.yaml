@@ -1,0 +1,53 @@
+###
+# Local smoke-test overlay for the consensus 30M run, 2x the size of
+# smoke_consensus.yaml.
+#
+# Stratified to the natural consensus replication regime (M=25 cap binds for
+# every peptide), but with K=20k peptides instead of 10k -> ~500k rows train,
+# ~21k rows valid.
+#
+# Build the subset once with:
+#   .venv/bin/python analysis/build_smoke_subset.py
+# (idempotent; skips already-built lance dirs.)
+#
+# Then:
+#   casanovo-repro train --config configs/smoke_consensus_2x.yaml
+###
+
+random_seed: 7
+lance_dir: casanovo/data/lance_v5_smoke/concensus_spec_30M_2x
+
+# --- Hardware: 1 local RTX 6000 Ada. Architecture knobs (n_layers, dim_model,
+#     n_head, dim_feedforward, dropout) inherit from casanovo_paper.yaml so
+#     we smoke-test the exact ~47M-param model that will train on Polaris. ---
+devices: 1
+accelerator: "gpu"
+precision: "bf16-mixed"
+# precision: "32-true"
+
+# Casanovo's data module does train_batch_size //= n_devices. With devices=1,
+# config 32 yields per-GPU = global = 32 -- same per-GPU shape as the Polaris
+# 4-GPU config (128 global / 4 GPUs = 32 per GPU).
+train_batch_size: 32
+predict_batch_size: 256
+
+# --- Schedule: scaled to ~500k rows (ceil(500000/32) = 15,625 train steps).
+#     Cosine spans post-warmup so LR decays through the rest of the run. ---
+warmup_iters: 1_000
+cosine_schedule_period_iters: 14_000
+max_epochs: 1
+# Hard step bound -- Lightning + IterableDataset + datapipe-wrapped shuffler
+# does not reliably terminate on max_epochs alone (epoch boundary leaks past
+# StopIteration). max_steps is unambiguous and stops training at exactly
+# this many optimizer steps. Set to ceil(rows/batch) for one full pass.
+# max_steps: 15_625
+val_check_interval: 1_000
+log_every_n_steps: 100
+shuffle_buffer_size: 5_000
+
+_repro:
+  dataset: consensus
+  output_dir: casanovo/logs/smoke_consensus_2x
+  wandb:
+    project: msbench-casanovo-smoke
+    run_name: smoke-consensus-2x-local

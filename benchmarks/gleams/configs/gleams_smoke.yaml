@@ -1,0 +1,60 @@
+# Staged smoke-test config: validates the full pipeline on a val-only subset.
+# The real 50-epoch paper run uses configs/gleams_paper.yaml.
+
+run_name: gleams_smoke
+
+data:
+  train_mgf: data/massive_kb_v1_shared/massivekb_82c0124b_val.mgf.xz
+  val_mgf:   data/massive_kb_v1_shared/massivekb_82c0124b_val.mgf.xz
+  test_mgf:  data/massive_kb_v1_shared/massivekb_82c0124b_val.mgf.xz
+  processed_dir: gleams/data/processed_smoke
+  charges: [2, 3, 4, 5]
+
+features:
+  fragment_mz_min: 50.5
+  fragment_mz_max: 2500.0
+  fragment_bin_size: 1.0005079
+  min_peaks: 10
+  min_mz_range: 250.0
+  max_peaks: 150
+
+pairs:
+  pair_mz_tolerance_ppm: 10.0
+  negative_pair_fragment_tolerance: 0.01
+  negative_pair_matching_fragments_threshold: 0.25
+
+model:
+  embedding_dim: 32
+
+loss:
+  margin: 1.0
+  label_certainty: 0.99
+
+optim:
+  optimizer: rectified_adam
+  learning_rate: 2.0e-4
+
+training:
+  batch_size: 256
+  steps_per_epoch: 500
+  num_epochs: 1
+  max_num_pairs_val: 10000
+  seed: 42
+
+hardware:
+  strategy: mirrored
+  encode_workers: 24
+
+logging:
+  wandb_project: msbench-gleams
+  wandb_entity: null
+  log_every_n_steps: 20
+  checkpoint_dir: gleams/models/smoke
+  log_dir: gleams/logs/smoke
+
+convergence:
+  enabled: true
+  eval_every_n_epochs: 1
+  num_query: 1000
+  num_library: 10000
+  seed: 1337

@@ -1,0 +1,42 @@
+name: allpositive
+
+dataset:
+  source: data/spec2vec/gnps_cleaned/gnps_positive_ionmode_cleaned_by_matchms_and_lookups.zip
+  subset: all_positive        # all filtered spectra, no inchikey deduplication
+
+preprocess:
+  mz_from: 0
+  mz_to: 1000
+  min_peaks: 10
+  relative_intensity_from: 0.001
+  reduce_n_required: 10
+  reduce_ratio_desired: 0.5
+  loss_mz_from: 5.0
+  loss_mz_to: 200.0
+  n_decimals: 2
+
+model:
+  sg: 0                 # CBOW
+  vector_size: 300
+  window: 500
+  min_count: 1
+  negative: 5
+  alpha: 0.025
+  alpha_decay: 0.00025
+  workers: 4
+  epochs: 15
+  compute_loss: true
+
+eval:
+  every_n_epochs: 2
+  holdout_pairs: 5000
+  fingerprint: daylight
+  fingerprint_nbits: 2048
+  similarity: jaccard
+
+wandb:
+  project: spec2vec-repro
+  run_name: allpositive
+  tags: [allpositive, cbow, paper-default]
+
+seed: 42

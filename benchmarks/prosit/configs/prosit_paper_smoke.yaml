@@ -1,0 +1,61 @@
+# Smoke against the real paper parquet (one shard, 1 epoch). For quickly
+# verifying the train loop handles the full Prosit-format data, before kicking
+# the long prosit_paper.yaml run.
+
+run_name: prosit_paper_smoke
+
+data:
+  train_parquet: prosit/data/processed/prosit_paper/val.parquet
+  val_parquet: null
+  test_parquet: null
+  val_ratio: 0.1
+  sequence_column: modified_sequence
+  label_column: intensities_raw
+  model_features:
+    - collision_energy_aligned_normed
+    - precursor_charge_onehot
+
+model:
+  seq_length: 30
+  with_termini: false
+  use_meta_data: true
+  use_prosit_ptm_features: false
+  embedding_output_dim: 16
+  recurrent_layers_sizes: [256, 512]
+  regressor_layer_size: 512
+  dropout_rate: 0.2
+  latent_dropout_rate: 0.1
+
+optim:
+  optimizer: adam
+  learning_rate: 1.0e-4
+  grad_clip_norm: 1.0
+  scheduler:
+    name: reduce_on_plateau
+    factor: 0.5
+    patience: 5
+    min_lr: 1.0e-7
+
+training:
+  batch_size: 1024
+  num_epochs: 1
+  early_stop_patience: 0
+  seed: 42
+
+hardware:
+  device: auto
+  num_workers: 4
+
+logging:
+  wandb_project: msbench-prosit-smoke
+  wandb_entity: null
+  wandb_mode: disabled
+  log_every_n_steps: 50
+  checkpoint_dir: prosit/models/paper_smoke
+  log_dir: prosit/logs/paper_smoke
+
+convergence:
+  enabled: true
+  eval_every_n_epochs: 1
+  per_charge: true
+  charges: [1, 2, 3, 4, 5, 6]
