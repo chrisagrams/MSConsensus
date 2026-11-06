@@ -1,0 +1,50 @@
+###
+# Local smoke-test overlay for the consensus 30M run, stratified to mirror
+# the massive_kb smoke's diversity-vs-replication regime.
+#
+# Where smoke_consensus.yaml uses K=10k peptides x M=25 cap (the natural
+# consensus profile of ~108x replication), this variant uses K=50k x M=3 to
+# hit ~150k rows over ~50k unique peptides — roughly massive_kb's profile
+# (50k peptides, 160k rows, ~3 spectra/peptide). Use this when you want to
+# sanity-check the model against a *peptide-diverse, low-replication*
+# consensus subset instead of the natural-replication one.
+#
+# Build the subset once with:
+#   .venv/bin/python analysis/build_smoke_subset.py
+# (idempotent; skips already-built lance dirs, so the existing
+# lance_v5_smoke/concensus_spec_30M/ and massive_kb_v1_shared/ are untouched.)
+#
+# Then:
+#   casanovo-repro train --config configs/smoke_consensus_diverse.yaml
+###
+
+random_seed: 7
+lance_dir: casanovo/data/lance_v5_smoke/concensus_spec_30M_diverse
+
+# --- Hardware: 1 local RTX 6000 Ada. ---
+devices: 1
+accelerator: "gpu"
+precision: "bf16-mixed"
+# precision: "32-true"
+
+# Per-GPU batch matches the Polaris 4-GPU config (128 global / 4 GPUs = 32
+# per GPU); see smoke_consensus.yaml for the divisor logic.
+train_batch_size: 32
+predict_batch_size: 256
+
+# --- Schedule: scaled to the K=50k x M=3 stratified subset (~150k rows ->
+#     ~4700 steps/epoch at batch=32, single-epoch run). Cosine spans the
+#     post-warmup portion of the epoch so LR decays through training. ---
+warmup_iters: 500
+cosine_schedule_period_iters: 4_500
+max_epochs: 1
+val_check_interval: 500
+log_every_n_steps: 50
+shuffle_buffer_size: 5_000
+
+_repro:
+  dataset: consensus
+  output_dir: casanovo/logs/smoke_consensus_diverse
+  wandb:
+    project: msbench-casanovo-smoke
+    run_name: smoke-consensus-diverse-local

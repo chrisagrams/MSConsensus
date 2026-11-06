@@ -1,0 +1,65 @@
+# 30 M consensus-spectra training run (gleams_concensus_30m).
+# Mirrors gleams_paper.yaml in everything but data paths and output directories,
+# so the paper-faithful 50 × 40 k schedule applies unchanged.
+#
+# val_mgf is carved from train (5 % deterministic random, seed 20260426) by
+# scripts/split_train_val.py — the source corpus only ships train + test.
+
+run_name: gleams_concensus_30m
+
+data:
+  train_mgf: gleams/data/concensus_split/concensus.mgf_train_main.mgf
+  val_mgf:   gleams/data/concensus_split/concensus.mgf_val.mgf
+  test_mgf:  data/concensus_spec_30M/concensus.mgf_test.xz
+  processed_dir: gleams/data/processed_concensus
+  charges: [2, 3, 4, 5]
+
+features:
+  # Logged to W&B for traceability; the encoder itself reads gleams.config.
+  fragment_mz_min: 50.5
+  fragment_mz_max: 2500.0
+  fragment_bin_size: 1.0005079   # averagine
+  min_peaks: 10
+  min_mz_range: 250.0
+  max_peaks: 150
+
+pairs:
+  pair_mz_tolerance_ppm: 10.0
+  negative_pair_fragment_tolerance: 0.01         # Da
+  negative_pair_matching_fragments_threshold: 0.25
+
+model:
+  embedding_dim: 32
+
+loss:
+  margin: 1.0
+  label_certainty: 0.99
+
+optim:
+  optimizer: rectified_adam
+  learning_rate: 2.0e-4
+
+training:
+  batch_size: 256
+  steps_per_epoch: 40000
+  num_epochs: 50
+  max_num_pairs_val: 512000
+  seed: 42
+
+hardware:
+  strategy: mirrored
+  encode_workers: 24
+
+logging:
+  wandb_project: msbench-gleams
+  wandb_entity: null
+  log_every_n_steps: 50
+  checkpoint_dir: gleams/models/concensus_30m
+  log_dir: gleams/logs/concensus_30m
+
+convergence:
+  enabled: true
+  eval_every_n_epochs: 1
+  num_query: 10000
+  num_library: 100000
+  seed: 1337

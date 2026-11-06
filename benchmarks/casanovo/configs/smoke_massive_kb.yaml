@@ -1,0 +1,44 @@
+###
+# Local smoke-test overlay for the MassIVE-KB run.
+# See casanovo/configs/smoke_consensus.yaml for the reasoning; this file is
+# the massive_kb peer.
+#
+# Build the smoke subset once with:
+#   .venv/bin/python analysis/build_smoke_subset.py
+#
+# Then:
+#   casanovo-repro train --config configs/smoke_massive_kb.yaml
+###
+
+random_seed: 7
+lance_dir: casanovo/data/lance_v5_smoke/massive_kb_v1_shared
+
+# --- Hardware: 1 local RTX 6000 Ada. ---
+devices: 1
+accelerator: "gpu"
+precision: "bf16-mixed"
+# precision: "32-true"
+
+
+# Per-GPU batch matches the Polaris 4-GPU config (128 global / 4 GPUs = 32
+# per GPU); see smoke_consensus.yaml for the divisor logic.
+train_batch_size: 32
+predict_batch_size: 256
+
+# --- Schedule: scaled to the stratified subset (50k peptides x M=5 cap;
+#     the heavy tail of single-spectrum peptides means the actual row count
+#     is ~150-200k, so ~5-6k steps/epoch at batch=32, single-epoch run).
+#     See smoke_consensus.yaml for the warmup/cosine rationale. ---
+warmup_iters: 500
+cosine_schedule_period_iters: 5_000
+max_epochs: 1
+val_check_interval: 500
+log_every_n_steps: 50
+shuffle_buffer_size: 5_000
+
+_repro:
+  dataset: massive_kb
+  output_dir: casanovo/logs/smoke_massive_kb
+  wandb:
+    project: msbench-casanovo-smoke
+    run_name: smoke-massive_kb-local

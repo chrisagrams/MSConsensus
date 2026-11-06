@@ -1,0 +1,59 @@
+# Smoke config: validates the full PyTorch pipeline on DLOmix's shipped 1k sample.
+# Real runs use prosit_paper.yaml or prosit_concensus_30m.yaml.
+
+run_name: prosit_smoke
+
+data:
+  # Pre-annotated 174-dim parquet that ships with the dlomix repo.
+  # Already in the schema FragmentIonIntensityDataset expects.
+  train_parquet: data/dlomix/example_dataset/intensity/third_pool_processed_sample.parquet
+  val_parquet: null            # null => use val_ratio split from train
+  test_parquet: null
+  val_ratio: 0.2
+  sequence_column: modified_sequence
+  label_column: intensities_raw
+  model_features:
+    - collision_energy_aligned_normed
+    - precursor_charge_onehot
+
+model:
+  seq_length: 30
+  with_termini: false
+  use_meta_data: true
+  use_prosit_ptm_features: false
+  embedding_output_dim: 16
+  recurrent_layers_sizes: [256, 512]
+  regressor_layer_size: 512
+  dropout_rate: 0.2
+  latent_dropout_rate: 0.1
+
+optim:
+  optimizer: adam
+  learning_rate: 1.0e-4
+  grad_clip_norm: 1.0
+  scheduler:
+    name: reduce_on_plateau
+    factor: 0.5
+    patience: 5
+    min_lr: 1.0e-7
+
+training:
+  batch_size: 128
+  num_epochs: 1
+  early_stop_patience: 0       # disabled for smoke
+  seed: 42
+
+hardware:
+  device: auto                 # auto -> cuda if available
+  num_workers: 4
+
+logging:
+  wandb_project: msbench-prosit-smoke
+  wandb_entity: null
+  wandb_mode: disabled         # smoke run: don't log
+  log_every_n_steps: 5
+  checkpoint_dir: prosit/models/smoke
+  log_dir: prosit/logs/smoke
+
+convergence:
+  enabled: false

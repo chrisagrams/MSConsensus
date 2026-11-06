@@ -1,0 +1,105 @@
+###
+# Per-dataset overlay for the new_match_15M run, PEPTIDE-DISJOINT split.
+# Deep-merged over casanovo_paper.yaml by casanovo_repro.train.
+#
+# Same source MGFs as consensus_15m_file, but reshard_match15m_pepdisjoint.py
+# routes each spectrum into {train, valid, test} by sha256(SEQ) mod 100:
+#   buckets 0..3   -> test   (~4%, ~580K spectra)
+#   buckets 4..7   -> valid  (~4%)
+#   buckets 8..99  -> train  (~92%, ~13.4M)
+# Hashing on the full SEQ string keeps every charge state of a given modified
+# peptide together. Output is 25 sharded MGFs per split (one per source file).
+###
+random_seed: 457
+# lance_dir is the v5-normalized output of normalize_lance_to_v5.py
+# (C[57.0215] -> C[Carbamidomethyl], M[15.9949] -> M[Oxidation]),
+# rsync'd to Eagle. Preprocessing was done locally; train on Polaris.
+lance_dir: data/new_match_15M/lance_v5_pepdisjoint
+
+_repro:
+  dataset: consensus_15m_pepdisjoint
+  autoresume: true
+  # Each split is the union of 25 per-source-file shards. depthcharge accepts
+  # a list of MGFs as input, so we don't concatenate.
+  train_mgf:
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/train/consensus_00.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/train/consensus_01.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/train/consensus_02.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/train/consensus_03.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/train/consensus_04.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/train/consensus_05.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/train/consensus_06.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/train/consensus_07.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/train/consensus_08.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/train/consensus_09.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/train/consensus_10.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/train/consensus_11.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/train/consensus_12.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/train/consensus_13.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/train/consensus_14.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/train/consensus_15.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/train/consensus_16.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/train/consensus_17.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/train/consensus_18.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/train/consensus_19.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/train/consensus_20.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/train/consensus_21.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/train/consensus_22.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/train/consensus_23.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/train/consensus_24.mgf
+  val_mgf:
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/valid/consensus_00.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/valid/consensus_01.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/valid/consensus_02.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/valid/consensus_03.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/valid/consensus_04.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/valid/consensus_05.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/valid/consensus_06.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/valid/consensus_07.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/valid/consensus_08.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/valid/consensus_09.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/valid/consensus_10.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/valid/consensus_11.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/valid/consensus_12.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/valid/consensus_13.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/valid/consensus_14.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/valid/consensus_15.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/valid/consensus_16.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/valid/consensus_17.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/valid/consensus_18.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/valid/consensus_19.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/valid/consensus_20.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/valid/consensus_21.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/valid/consensus_22.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/valid/consensus_23.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/valid/consensus_24.mgf
+  test_mgf:
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/test/consensus_00.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/test/consensus_01.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/test/consensus_02.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/test/consensus_03.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/test/consensus_04.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/test/consensus_05.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/test/consensus_06.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/test/consensus_07.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/test/consensus_08.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/test/consensus_09.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/test/consensus_10.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/test/consensus_11.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/test/consensus_12.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/test/consensus_13.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/test/consensus_14.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/test/consensus_15.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/test/consensus_16.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/test/consensus_17.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/test/consensus_18.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/test/consensus_19.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/test/consensus_20.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/test/consensus_21.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/test/consensus_22.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/test/consensus_23.mgf
+    - casanovo/data/new_match_15M/mgf_pepdisjoint/test/consensus_24.mgf
+  output_dir: casanovo/logs/consensus_15m_pepdisjoint
+  wandb:
+    project: msbench-casanovo
+    run_name: consensus15m-pepdisjoint-from-scratch

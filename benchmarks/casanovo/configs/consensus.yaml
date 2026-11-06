@@ -1,0 +1,32 @@
+###
+# Per-dataset overlay for the consensus 30M run.
+# Deep-merged over casanovo_paper.yaml by casanovo_repro.train.
+###
+random_seed: 455
+# Lance was rewritten post-build by casanovo/scripts/normalize_lance_to_v5.py
+# (C[57.0215] -> C[Carbamidomethyl], M[15.9949] -> M[Oxidation]) so the seq
+# strings now match the casanovo 5.x default residue alphabet pinned in
+# casanovo_paper.yaml. No residues override here.
+lance_dir: data/concensus_spec_30M/casanovo_lance_v5
+
+_repro:
+  dataset: consensus
+  # Polaris job runs hit walltime; pick up from <output_dir>/last.ckpt
+  # automatically on relaunch.
+  autoresume: true
+  # The decompressed source MGFs already exist on Eagle as
+  #   .../concensus_spec_30M/concensus.mgf_train  (116G, full train pre-split)
+  #   .../concensus_spec_30M/concensus.mgf_test   (13G)
+  # Preprocess produces train_main + val from concensus.mgf_train via
+  # casanovo/scripts/split_train_val.py and writes them next to the source,
+  # plus a .mgf-suffixed symlink for the test file (casanovo's input-path
+  # filter requires a .mgf or .lance extension).
+  source_full_train: data/concensus_spec_30M/concensus.mgf_train
+  source_test:       data/concensus_spec_30M/concensus.mgf_test
+  train_mgf: data/concensus_spec_30M/concensus.mgf_train_main.mgf
+  val_mgf:   data/concensus_spec_30M/concensus.mgf_val.mgf
+  test_mgf:  data/concensus_spec_30M/concensus.mgf_test.mgf
+  output_dir: runs/casanovo_consensus
+  wandb:
+    project: msbench-casanovo
+    run_name: consensus30m-paper-from-scratch

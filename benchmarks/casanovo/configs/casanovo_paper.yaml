@@ -1,0 +1,137 @@
+###
+# Paper-faithful Casanovo training config.
+#
+# Source: Yilmaz, Bittremieux, et al. Nat. Commun. 2024 (doi:10.1038/s41467-024-49731-x).
+# Methods §"Model and training hyperparameters":
+#   "We train models with nine layers, embedding size d=512, and eight attention
+#    heads, yielding a total of ~47M model parameters. A batch size of 32 spectra
+#    and 1e-5 weight decay is used during training, with a peak learning rate of
+#    5e-4. The learning rate is linearly increased from zero to its peak value in
+#    100,000 warm-up steps, followed by a cosine shaped decay. The MassIVE-KB
+#    model was trained for a single epoch on 30 million PSMs from the MassIVE-KB
+#    dataset ... evaluating the performance on the validation set after every
+#    50,000 iterations. The final model weights were taken from the snapshot with
+#    the lowest validation loss."
+#
+# This file overlays *only* the keys the paper specifies. Every other knob is
+# inherited verbatim from upstream casanovo's config.yaml at the version pinned
+# in pyproject.toml. casanovo_repro.train deep-merges the per-dataset overlay
+# (massive_kb.yaml / consensus.yaml) on top of this before handing the result
+# to casanovo's ModelRunner.
+###
+
+# --- Paper-specified architecture (matches upstream defaults; restated for explicitness) ---
+n_layers: 9
+dim_model: 512
+n_head: 8
+dim_feedforward: 1024
+dropout: 0.0
+
+# --- Paper-specified optimization ---
+learning_rate: 5e-4
+weight_decay: 1e-5
+warmup_iters: 100_000
+# Cosine half-period extended to span TWO full epochs over the 30M-PSM
+# corpus at global batch = 32 (per-GPU) * 4 (DDP) = 128, post-warmup:
+#   steps_per_epoch = ceil(30_000_000 / 128) = 234_375
+#   total_steps_2_epochs = 2 * 234_375 = 468_750
+#   cosine_half_period = 468_750 - 100_000 (warmup) - ~24_375 (slack) = 444_375
+# This stretches the LR decay across the longer training so we don't bottom
+# out before epoch 2 finishes. Note: when autoresume continues a run that
+# was scheduled with the old (134_375) period, the LR will jump at the
+# resume boundary because Lightning recomputes the schedule from current
+# global_step against the new period — accepted cost for extending past
+# epoch 1.
+cosine_schedule_period_iters: 444_375
+
+# --- Paper-specified training schedule ---
+# Casanovo's data module does train_batch_size //= n_devices, so config 128
+# with 4 GPUs gives 32 per GPU and global batch 128 (paper's "batch size of 32"
+# read as per-GPU). This is a deviation from the upstream default of 32 (which
+# upstream interprets as the *global* batch).
+train_batch_size: 128
+max_epochs: 2                 # paper specifies 1 epoch; we extend to 2 to compare epoch-1 vs epoch-2 weights (Option B per-epoch ckpt preservation kept on disk)
+val_check_interval: 10_000    # paper said 50k; we use 10k for finer-grained valid_CELoss in W&B (paper-faithful values restorable by reverting to 50_000)
+num_sanity_val_steps: 0
+shuffle: true
+shuffle_buffer_size: 10_000
+
+# --- Hardware (Polaris: 1 node, 4 A100s, DDP) ---
+accelerator: "gpu"
+devices: 4
+# Paper does not specify precision. We use bf16-mixed: A100-native via tensor
+# cores, ~3x faster than fp32, numerically equivalent to fp32 for transformer
+# training in practice. This deviates from upstream casanovo's default
+# (32-true) but stays inside the paper's spec.
+precision: "bf16-mixed"
+# precision: "32-true"
+
+# --- Logging ---
+# Casanovo wires CSVLogger / TensorBoardLogger via these flags; W&B is added
+# by the casanovo_repro wrapper directly to the Trainer's logger list.
+log_metrics: true
+tb_summarywriter: false
+n_log: 1
+log_every_n_steps: 50
+
+# --- Spectrum processing (upstream defaults; these match the original Casanovo
+#     paper's choices and are not modified by the 2024 paper's Methods text) ---
+min_peaks: 20
+max_peaks: 150
+min_mz: 50.0
+max_mz: 2500.0
+min_intensity: 0.01
+remove_precursor_tol: 2.0
+max_charge: 4
+precursor_mass_tol: 50
+isotope_error_range: [0, 1]
+min_peptide_len: 6
+max_peptide_len: 100
+
+# --- Tokenization ---
+# Both datasets' lance dumps are post-build normalized to the casanovo 5.x
+# named-bracket form (`C[Carbamidomethyl]`, `[Ammonia-loss]-`, etc.) by
+# casanovo/scripts/normalize_lance_to_v5.py, so the standard proforma
+# tokenizer covers both. No per-dataset override needed.
+massivekb_tokenizer: false
+replace_isoleucine_with_leucine: true
+train_label_smoothing: 0.01
+
+# --- Per-dataset overlay populates these ---
+random_seed:
+lance_dir:
+
+# --- Inference / db_search defaults are not used by training; keep upstream values ---
+predict_batch_size: 1024
+top_match: 1
+n_beams: 1
+
+# --- Vocabulary (upstream casanovo's default residue set; the paper does not modify it) ---
+# residues:
+#   "G": 57.021464
+#   "A": 71.037114
+#   "S": 87.032028
+#   "P": 97.052764
+#   "V": 99.068414
+#   "T": 101.047670
+#   "C[Carbamidomethyl]": 160.030649
+#   "L": 113.084064
+#   "I": 113.084064
+#   "N": 114.042927
+#   "D": 115.026943
+#   "Q": 128.058578
+#   "K": 128.094963
+#   "E": 129.042593
+#   "M": 131.040485
+#   "H": 137.058912
+#   "F": 147.068414
+#   "R": 156.101111
+#   "Y": 163.063329
+#   "W": 186.079313
+#   "M[Oxidation]": 147.035400
+#   "N[Deamidated]": 115.026943
+#   "Q[Deamidated]": 129.042594
+#   "[Acetyl]-": 42.010565
+#   "[Carbamyl]-": 43.005814
+#   "[Ammonia-loss]-": -17.026549
+#   "[+25.980265]-": 25.980265

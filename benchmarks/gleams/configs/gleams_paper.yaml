@@ -1,0 +1,68 @@
+# GLEAMS paper-faithful config (Bittremieux et al. 2022, Nature Methods).
+# Where the official repo disagrees with the paper, the paper wins.
+
+run_name: gleams_paper_repro
+
+data:
+  # Pre-made casanovo MassIVE-KB splits. Peptide-disjoint (stricter than
+  # GLEAMS's dataset-level split) — documented caveat.
+  train_mgf: data/massive_kb_v1_shared/massivekb_82c0124b_train.mgf.xz
+  val_mgf:   data/massive_kb_v1_shared/massivekb_82c0124b_val.mgf.xz
+  test_mgf:  data/massive_kb_v1_shared/massivekb_82c0124b_test.mgf.xz
+  processed_dir: gleams/data/processed
+  charges: [2, 3, 4, 5]
+
+features:
+  # Encoder parameters are pulled from gleams.config at runtime (we don't
+  # override them — doing so would drift from the shipped reference-spectra
+  # encoding). This block is logged to W&B for traceability only.
+  fragment_mz_min: 50.5
+  fragment_mz_max: 2500.0
+  fragment_bin_size: 1.0005079   # averagine
+  min_peaks: 10
+  min_mz_range: 250.0
+  max_peaks: 150
+
+pairs:
+  pair_mz_tolerance_ppm: 10.0
+  negative_pair_fragment_tolerance: 0.01         # Da
+  negative_pair_matching_fragments_threshold: 0.25
+
+model:
+  embedding_dim: 32
+  # activation and activity_regularizer are hardcoded inside gleams.nn.embedder
+
+loss:
+  margin: 1.0
+  label_certainty: 0.99
+
+optim:
+  optimizer: rectified_adam
+  learning_rate: 2.0e-4
+
+training:
+  batch_size: 256
+  steps_per_epoch: 40000
+  num_epochs: 50           # paper; repo default is 100
+  max_num_pairs_val: 512000
+  seed: 42
+
+hardware:
+  strategy: mirrored       # tf.distribute.MirroredStrategy across visible GPUs
+  encode_workers: 24       # joblib workers for MGF → feature encoding (main-process-bound beyond 24)
+
+logging:
+  wandb_project: msbench-gleams
+  wandb_entity: null
+  log_every_n_steps: 50
+  checkpoint_dir: gleams/models
+  log_dir: gleams/logs
+
+convergence:
+  # Periodic downstream eval: embed a held-out query set, find nearest library
+  # spectrum by Euclidean distance, record top-1 peptide accuracy.
+  enabled: true
+  eval_every_n_epochs: 1
+  num_query: 10000
+  num_library: 100000
+  seed: 1337

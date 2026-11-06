@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "prosit_repro"
+version = "0.1.0"
+description = "Faithful retrain of Prosit (Gessulat et al. 2019) via the DLOmix PyTorch backend, with W&B logging and convergence tracking on both the original ProteomeTools data and a 30 M consensus-spectra corpus."
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "torch>=2.1,<2.5",
+    "dlomix[pytorch]>=0.2",
+    "numpy>=1.23,<2.1",
+    "pandas>=2.0,<2.3",
+    "pyarrow>=12,<18",
+    "h5py>=3.9",
+    "pyteomics>=4.6",
+    "scipy>=1.10",
+    "scikit-learn>=1.3",
+    "click>=8.0",
+    "pyyaml>=6.0",
+    "wandb>=0.16",
+    "tqdm>=4.66",
+    "datasets>=2.16",
+]
+
+[project.scripts]
+prosit-repro = "prosit_repro.__main__:cli"
+
+[tool.setuptools.packages.find]
+where = ["src"]
